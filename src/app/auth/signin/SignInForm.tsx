@@ -42,7 +42,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ providers }) => {
             <Input
               id="email"
               type="email"
-              placeholder="servicedesk@resolvely.app"
+              placeholder="support@resolvely.app"
               required
             />
           </div>
@@ -59,7 +59,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ providers }) => {
             <Input
               id="password"
               type="password"
-              placeholder="********"
+              placeholder="•••••••••••"
               required
             />
           </div>
@@ -128,7 +128,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ providers }) => {
         </div>
         <div className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <a href="#" className="underline underline-offset-4">
+          <a href="/auth/signup" className="underline underline-offset-4">
             Sign up
           </a>
         </div>

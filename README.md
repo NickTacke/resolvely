@@ -14,11 +14,11 @@
     *   `updateTicket`: Endpoint to update ticket details.
     *   `deleteTicket`: Endpoint to delete tickets.
 *   - [x] **Basic Ticket Model & Prisma Integration**: Define your Prisma schema and models to interact with the database for ticket data.
-*   - [ ] **Initial Frontend Ticket Pages (View & Create)**: Create basic React components for:
+*   - [x] **Initial Frontend Ticket Pages (View & Create)**: Create basic React components for:
     *   **Ticket List Page**: Display a list of tickets (initially just displaying basic data).
     *   **Create Ticket Page**: Form to create new tickets, connected to the `createTicket` tRPC endpoint.
     *   **Ticket Detail Page**: Display details of a single ticket fetched using `getTicketById`.
-*   - [ ] **Basic Styling with Shadcn/ui**: Style the initial components using components from shadcn/ui to get a clean and consistent look.
+*   - [x] **Basic Styling with Shadcn/ui**: Style the initial components using components from shadcn/ui to get a clean and consistent look.
 
 **2. User Authentication & Authorization (Milestone 2)**
 
@@ -26,7 +26,7 @@
     *   Choose an authentication provider (e.g., Credentials, Google, GitHub).
     *   Define user roles (e.g., admin, agent, user) if necessary for authorization.
 *   - [x] **User Model & Prisma Integration**: Extend your Prisma schema and models to include user data.
-*   - [ ] **Protected Routes**: Implement protected routes to ensure only authenticated users can access certain pages (like ticket creation, viewing, etc.).
+*   - [x] **Protected Routes**: Implement protected routes to ensure only authenticated users can access certain pages (like ticket creation, viewing, etc.).
 *   - [ ] **Basic User Management (Admin Panel - Optional for MVP)**:  If needed for your application, create a basic admin panel to manage users.
 *   - [ ] **Authorization Logic**: Implement authorization logic to control what users can do based on roles or permissions (e.g., who can create tickets, who can update status, who can assign tickets).
 

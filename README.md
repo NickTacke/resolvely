@@ -7,7 +7,7 @@
 *   - [x] **Database Schema Design**: Plan your database schema for tickets, users, and any related data.
     *   Consider fields like `title`, `description`, `status`, `priority`, `category`, `assigned user`, `timestamps`, etc.
     *   Define relationships between tables (e.g., user-ticket, ticket-status).
-*   - [ ] **Backend tRPC API for Tickets (CRUD Operations)**: Implement tRPC endpoints for basic ticket operations.
+*   - [x] **Backend tRPC API for Tickets (CRUD Operations)**: Implement tRPC endpoints for basic ticket operations.
     *   `createTicket`: Endpoint to create new tickets.
     *   `getTickets`: Endpoint to fetch a list of tickets (consider pagination and filtering later).
     *   `getTicketById`: Endpoint to fetch a single ticket by ID.

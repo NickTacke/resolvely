@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle } from "~/components/ui/card";
 const CreateTicketPage = () => {
   return (
     <div className="container mx-auto py-10">
-      <Card className="max-w-lg mx-auto">
+      <Card className="mx-auto max-w-lg">
         <CardHeader>
           <CardTitle className="text-2xl">Create New Ticket</CardTitle>
         </CardHeader>

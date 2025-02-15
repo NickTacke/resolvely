@@ -1,18 +1,28 @@
 // app/tickets/[id]/page.tsx
-'use client';
+"use client";
 
-import React from 'react';
-import { useParams } from 'next/navigation';
+import React from "react";
+import { useParams } from "next/navigation";
 import { api } from "~/trpc/react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Textarea } from '~/components/ui/textarea';
+import { Textarea } from "~/components/ui/textarea";
 
 const TicketDetailPage = () => {
   const params = useParams<{ id: string }>(); // Get the ticket ID from URL params
   const ticketId = params.id;
 
-  const { data: ticket, isLoading, isError } = api.ticket.getTicketById.useQuery({
+  const {
+    data: ticket,
+    isLoading,
+    isError,
+  } = api.ticket.getTicketById.useQuery({
     id: ticketId,
   });
 
@@ -25,15 +35,17 @@ const TicketDetailPage = () => {
   }
 
   if (!ticket) {
-    return <p>{`Ticket with ID "${ticketId}" not found.`}</p>
+    return <p>{`Ticket with ID "${ticketId}" not found.`}</p>;
   }
 
   return (
     <div className="container mx-auto py-10">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle className="text-2xl">{ticket.title}</CardTitle>
-          <CardDescription>Created: {ticket.createdAt.toLocaleDateString()}</CardDescription>
+          <CardDescription>
+            Created: {ticket.createdAt.toLocaleDateString()}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-2">
@@ -42,7 +54,12 @@ const TicketDetailPage = () => {
           </div>
 
           <h3 className="text-lg font-semibold">Description</h3>
-          <Textarea className="text-muted-foreground" readOnly style={{ whiteSpace: 'pre-line', resize: 'none', height: '300px' }} value={ticket.description || 'No description provided.'}></Textarea>
+          <Textarea
+            className="text-muted-foreground"
+            readOnly
+            style={{ whiteSpace: "pre-line", resize: "none", height: "300px" }}
+            value={ticket.description || "No description provided."}
+          ></Textarea>
 
           {ticket.assignedTo && (
             <div>
@@ -58,10 +75,12 @@ const TicketDetailPage = () => {
               <h3 className="text-lg font-semibold">Comments</h3>
               <ul>
                 {ticket.comments.map((comment) => (
-                  <li key={comment.id} className="mb-2 p-2 border rounded">
-                    <p className="font-semibold">{comment.author.name || comment.author.email}:</p>
+                  <li key={comment.id} className="mb-2 rounded border p-2">
+                    <p className="font-semibold">
+                      {comment.author.name || comment.author.email}:
+                    </p>
                     <p className="text-muted-foreground">{comment.content}</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="mt-1 text-xs text-gray-500">
                       {comment.createdAt.toLocaleDateString()}
                     </p>
                   </li>

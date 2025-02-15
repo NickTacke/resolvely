@@ -39,6 +39,7 @@ export const ticketRouter = createTRPCRouter({
                     createdAt: "desc"
                 }
             });
+            return tickets;
         } catch(err) {
             console.error("Error fetching tickets:", err);
             throw new Error("Error fetching tickets!");

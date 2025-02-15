@@ -16,7 +16,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ providers }) => {
   const router = useRouter(); // Use useRouter from next/navigation
 
   async function handleSignIn(providerId: string) {
-    await signIn(providerId, { callbackUrl: '/' }); // Redirect to home page after sign-in
+    await signIn(providerId, { callbackUrl: '/dashboard' }); // Redirect to home page after sign-in
   }
 
   return (

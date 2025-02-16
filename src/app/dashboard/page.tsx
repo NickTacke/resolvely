@@ -1,4 +1,5 @@
 import { User } from "next-auth";
+import { redirect } from "next/navigation";
 import { AppSidebar } from "~/components/app-sidebar";
 import {
   Breadcrumb,
@@ -18,6 +19,12 @@ import { auth } from "~/server/auth";
 
 export default async function Page() {
   const session = await auth();
+
+  console.log(session);
+
+  // if(!session?.user) {
+  //   redirect('/');
+  // }
 
   const userData: User = {
     id: session?.user.id,

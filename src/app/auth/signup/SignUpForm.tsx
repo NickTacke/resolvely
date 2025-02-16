@@ -17,6 +17,7 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 
 const SignInForm = () => {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -51,10 +52,23 @@ const SignInForm = () => {
         <CardTitle className="my-2 text-2xl">
           <span className="text-primary">Resolvely</span>
         </CardTitle>
-        <CardDescription>Choose your preferred sign-in method</CardDescription>
+        <CardDescription>Fill out the form to register</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-6">
+          <div className="grid gap-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="string"
+              placeholder="Resolvely"
+              value={email}
+              onChange={(e) => {
+                setUsername(e.target.value);
+              }}
+              required
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -69,15 +83,7 @@ const SignInForm = () => {
             />
           </div>
           <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              <a
-                href="forgot/password"
-                className="ml-auto text-sm underline-offset-4 hover:underline"
-              >
-                Forgot your password?
-              </a>
-            </div>
+            <Label htmlFor="password">Password</Label>
             <Input
               id="password"
               type="password"
@@ -96,8 +102,24 @@ const SignInForm = () => {
               handleCredentialsSignIn(e);
             }}
           >
-            Login
+            Register
           </Button>
+        </div>
+        <div className="text-left text-sm text-muted-foreground">
+          By signing up, you agree to our{" "}
+          <a
+            href="/auth/terms"
+            className="text-primary underline underline-offset-4"
+          >
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a
+            href="/auth/privacy"
+            className="text-primary underline underline-offset-4"
+          >
+            Privacy Policy
+          </a>
         </div>
         <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
           <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -189,9 +211,9 @@ const SignInForm = () => {
           </Button>
         </div>
         <div className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <a href="/auth/signup" className="underline underline-offset-4">
-            Sign up
+          Already have an account?{" "}
+          <a href="/auth/signin" className="underline underline-offset-4">
+            Sign in
           </a>
         </div>
       </CardContent>

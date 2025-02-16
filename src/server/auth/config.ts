@@ -46,24 +46,35 @@ export const authConfig = {
         try {
           const user = await db.user.findUnique({
             where: {
-              email: email as string
-            }
-          })
+              email: email as string,
+            },
+          });
 
           if (!user || !user.passwordHash) {
-            console.log("No credentials user found in database for email:", email);
+            console.log(
+              "No credentials user found in database for email:",
+              email,
+            );
             return null; // No user found in database
           }
 
-          const passwordMatch = await bcrypt.compare(password as string, user.passwordHash);
+          const passwordMatch = await bcrypt.compare(
+            password as string,
+            user.passwordHash,
+          );
 
           if (passwordMatch) {
-            return { id: user.id.toString(), name: user.name, email: user.email, image: user.image };
+            return {
+              id: user.id.toString(),
+              name: user.name,
+              email: user.email,
+              image: user.image,
+            };
           } else {
             console.log("Password mismatch for user:", email);
             return null; // Passwords do not match
           }
-        } catch(err) {
+        } catch (err) {
           console.error("Error during authorize:", err);
           return null; // Handle any errors during database lookup
         }
@@ -156,21 +167,21 @@ export const authConfig = {
       }
     },
     async session({ session, token, user }) {
-          console.log("Session Callback - Token:", token); // Log token in session callback
-          console.log("Session Callback - User:", user);   // Log user in session callback
-          if (token?.sub) {
-              session.user.id = token.sub;
-          }
-          return session;
-      },
-      async jwt({ token, user, account, profile, trigger }) {
-          console.log("JWT Callback - User:", user);     // Log user in jwt callback
-          console.log("JWT Callback - Token (before):", token); // Log token before modification
-          if (user) {
-              token.sub = user.id?.toString();
-          }
-          console.log("JWT Callback - Token (after):", token);  // Log token after modification
-          return token;
-      },
+      console.log("Session Callback - Token:", token); // Log token in session callback
+      console.log("Session Callback - User:", user); // Log user in session callback
+      if (token?.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+    async jwt({ token, user, account, profile, trigger }) {
+      console.log("JWT Callback - User:", user); // Log user in jwt callback
+      console.log("JWT Callback - Token (before):", token); // Log token before modification
+      if (user) {
+        token.sub = user.id?.toString();
+      }
+      console.log("JWT Callback - Token (after):", token); // Log token after modification
+      return token;
+    },
   },
 } satisfies NextAuthConfig;

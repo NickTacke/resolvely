@@ -24,38 +24,44 @@ const SignInForm = () => {
 
   const handleSignup = async (e: any) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: username, email: email, password: password }),
+        body: JSON.stringify({
+          name: username,
+          email: email,
+          password: password,
+        }),
       });
 
       if (response.ok) {
         console.log("Signup successful, attempting sign-in");
         // **Get username and password from form state (or wherever you have them)**
-        const signInResult = await signIn('credentials', {
+        const signInResult = await signIn("credentials", {
           email: email, // Or username field, depending on your login logic
           password: password,
-          redirectTo: '/dashboard',
+          redirectTo: "/dashboard",
           redirect: true, // Redirect to default callback URL after sign-in
         });
-      
+
         if (signInResult?.error) {
-          console.error("Automatic sign-in failed after signup:", signInResult.error);
+          console.error(
+            "Automatic sign-in failed after signup:",
+            signInResult.error,
+          );
           // Handle sign-in error if needed, maybe set a different error message
         } else {
           // Sign-in successful after signup, redirect will happen due to redirect: true
         }
       }
-
     } catch (err) {
       console.error("Error during signup fetch:", err);
-      setError('Something went wrong during signup');
+      setError("Something went wrong during signup");
     }
   };
 
@@ -67,9 +73,13 @@ const SignInForm = () => {
     <Card className="w-96">
       <CardHeader className="text-center">
         <CardTitle className="my-2 text-2xl">
-            <a className="font-bold" href="/"><span className="text-primary">Resolvely</span></a>
+          <a className="font-bold" href="/">
+            <span className="text-primary">Resolvely</span>
+          </a>
         </CardTitle>
-        <CardDescription>Ready for Simpler Support? Register now!</CardDescription>
+        <CardDescription>
+          Ready for Simpler Support? Register now!
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-6">

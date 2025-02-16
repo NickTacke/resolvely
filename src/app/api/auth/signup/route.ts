@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         name,
         email,
         passwordHash: hashedPassword,
-        image: `https://ui-avatars.com/api/?background=random&name=${(name as string).replaceAll(' ', '+')}`
+        image: `https://ui-avatars.com/api/?background=random&name=${(name as string).replaceAll(" ", "+")}`,
       },
     });
 

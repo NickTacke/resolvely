@@ -43,35 +43,30 @@ export const authConfig = {
       async authorize(credentials, req) {
         const { email, password } = credentials;
 
-        // **Replace with your actual database/authentication logic**
-        // --- Example (In-memory users for demonstration - **DO NOT USE IN PRODUCTION**) ---
-        const users = [
-          {
-            id: 1,
-            email: "testuser@resolvely.app",
-            passwordHash:
-              "$2b$10$rwDubENReKnjWjZefQ26PuAnFnyN..YhOK5aesmXH8z3ZV2jRZl0u",
-          }, // Example hashed password for "password"
-        ];
-        const user = users.find((u) => u.email === email);
+        try {
+          const user = await db.user.findUnique({
+            where: {
+              email: email as string
+            }
+          })
 
-        console.log(user);
+          if (!user || !user.passwordHash) {
+            console.log("No credentials user found in database for email:", email);
+            return null; // No user found in database
+          }
 
-        if (!user) {
-          return null;
+          const passwordMatch = await bcrypt.compare(password as string, user.passwordHash);
+
+          if (passwordMatch) {
+            return { id: user.id.toString(), name: user.name, email: user.email, image: user.image };
+          } else {
+            console.log("Password mismatch for user:", email);
+            return null; // Passwords do not match
+          }
+        } catch(err) {
+          console.error("Error during authorize:", err);
+          return null; // Handle any errors during database lookup
         }
-
-        const passwordMatch = await bcrypt.compare(
-          password as string,
-          user.passwordHash,
-        );
-
-        if (passwordMatch) {
-          return { id: user.id.toString(), email: user.email, name: null };
-        } else {
-          return null;
-        }
-        // --- End of Example ---
       },
     }),
     GoogleProvider({
@@ -101,6 +96,9 @@ export const authConfig = {
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: "/auth/signin", // Custom sign-in page'
+  },
+  session: {
+    strategy: "jwt",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
@@ -157,12 +155,22 @@ export const authConfig = {
         return false; // Or potentially a redirect URL string if you want custom error handling page
       }
     },
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
+    async session({ session, token, user }) {
+          console.log("Session Callback - Token:", token); // Log token in session callback
+          console.log("Session Callback - User:", user);   // Log user in session callback
+          if (token?.sub) {
+              session.user.id = token.sub;
+          }
+          return session;
       },
-    }),
+      async jwt({ token, user, account, profile, trigger }) {
+          console.log("JWT Callback - User:", user);     // Log user in jwt callback
+          console.log("JWT Callback - Token (before):", token); // Log token before modification
+          if (user) {
+              token.sub = user.id?.toString();
+          }
+          console.log("JWT Callback - Token (after):", token);  // Log token after modification
+          return token;
+      },
   },
 } satisfies NextAuthConfig;

@@ -12,7 +12,6 @@ import {
   CardDescription,
   CardContent,
 } from "~/components/ui/card"; // Shadcn Card
-import { Provider } from "next-auth/providers";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 
@@ -23,24 +22,42 @@ const SignInForm = () => {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  async function handleCredentialsSignIn(event: any) {
-    event.preventDefault();
-    setError("");
+  const handleSignup = async (e: any) => {
+    e.preventDefault();
+    setError('');
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: username, email: email, password: password }),
+      });
 
-    console.log(result);
+      if (response.ok) {
+        console.log("Signup successful, attempting sign-in");
+        // **Get username and password from form state (or wherever you have them)**
+        const signInResult = await signIn('credentials', {
+          email: email, // Or username field, depending on your login logic
+          password: password,
+          redirectTo: '/dashboard',
+          redirect: true, // Redirect to default callback URL after sign-in
+        });
+      
+        if (signInResult?.error) {
+          console.error("Automatic sign-in failed after signup:", signInResult.error);
+          // Handle sign-in error if needed, maybe set a different error message
+        } else {
+          // Sign-in successful after signup, redirect will happen due to redirect: true
+        }
+      }
 
-    if (result?.error) {
-      setError("Invalid credentials.");
-    } else {
-      router.push("/dashboard");
+    } catch (err) {
+      console.error("Error during signup fetch:", err);
+      setError('Something went wrong during signup');
     }
-  }
+  };
 
   async function handleSignIn(providerId: string) {
     await signIn(providerId, { callbackUrl: "/dashboard" }); // Redirect to home page after sign-in
@@ -50,9 +67,9 @@ const SignInForm = () => {
     <Card className="w-96">
       <CardHeader className="text-center">
         <CardTitle className="my-2 text-2xl">
-          <span className="text-primary">Resolvely</span>
+            <a className="font-bold" href="/"><span className="text-primary">Resolvely</span></a>
         </CardTitle>
-        <CardDescription>Fill out the form to register</CardDescription>
+        <CardDescription>Ready for Simpler Support? Register now!</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-6">
@@ -62,7 +79,7 @@ const SignInForm = () => {
               id="username"
               type="string"
               placeholder="Resolvely"
-              value={email}
+              value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
               }}
@@ -99,7 +116,7 @@ const SignInForm = () => {
             type="submit"
             className="w-full"
             onClick={(e) => {
-              handleCredentialsSignIn(e);
+              handleSignup(e);
             }}
           >
             Register

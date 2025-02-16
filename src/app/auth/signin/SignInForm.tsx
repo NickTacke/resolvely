@@ -49,7 +49,7 @@ const SignInForm = () => {
     <Card className="w-96">
       <CardHeader className="text-center">
         <CardTitle className="my-2 text-2xl">
-          <span className="text-primary">Resolvely</span>
+          <a className="font-bold" href="/"><span className="text-primary">Resolvely</span></a>
         </CardTitle>
         <CardDescription>Choose your preferred sign-in method</CardDescription>
       </CardHeader>

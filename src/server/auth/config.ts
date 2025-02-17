@@ -55,7 +55,7 @@ export const authConfig = {
               "No credentials user found in database for email:",
               email,
             );
-            return null; // No user found in database
+            return null;
           }
 
           const passwordMatch = await bcrypt.compare(
@@ -72,11 +72,11 @@ export const authConfig = {
             };
           } else {
             console.log("Password mismatch for user:", email);
-            return null; // Passwords do not match
+            return null;
           }
         } catch (err) {
           console.error("Error during authorize:", err);
-          return null; // Handle any errors during database lookup
+          return null;
         }
       },
     }),
@@ -114,18 +114,18 @@ export const authConfig = {
   callbacks: {
     async signIn({ user, account, profile }) {
       const { email } = user;
-      account = account as Account;
+
+      if (account === null || account == undefined) return false;
       const { providerAccountId, provider } = account;
 
       try {
-        // Add a try...catch block to handle potential errors
-        // 1. Check if a user already exists with this email
+        // Check if a user already exists with this email
         const existingUser = await db.user.findUnique({
           where: { email: email as string },
         });
 
         if (existingUser) {
-          // 2. Check if this provider account is already linked to this user
+          // Check if this provider account is already linked to this user
           const existingAccountLink = await db.account.findFirst({
             where: {
               userId: existingUser.id,
@@ -135,14 +135,14 @@ export const authConfig = {
           });
 
           if (!existingAccountLink) {
-            // 3. Link the new provider account to the existing user
+            // Link the new provider account to the existing user
             await db.account.create({
               data: {
                 userId: existingUser.id,
                 provider: provider,
                 providerAccountId: providerAccountId,
-                type: account.type, // Usually "oauth"
-                access_token: account.access_token, // Store tokens if needed
+                type: account.type,
+                access_token: account.access_token,
                 expires_at: account.expires_at,
                 id_token: account.id_token,
                 refresh_token: account.refresh_token,
@@ -154,33 +154,25 @@ export const authConfig = {
           }
           return true; // Sign in successful (or account already linked)
         } else {
-          // If no user with this email exists, let NextAuth handle account creation as usual.
-          // The Prisma adapter will handle user creation on first login.
+          // The Prisma adapter will handle user creation on first login
           return true;
         }
       } catch (error) {
         console.error("Error in signIn callback:", error);
-        // Handle the error appropriately.
-        // For signIn callback, returning false usually means "prevent sign-in".
-        // Or you could redirect to an error page if needed.
-        return false; // Or potentially a redirect URL string if you want custom error handling page
+        // TODO: Handle the error appropriately
+        return false;
       }
     },
     async session({ session, token, user }) {
-      console.log("Session Callback - Token:", token); // Log token in session callback
-      console.log("Session Callback - User:", user); // Log user in session callback
       if (token?.sub) {
         session.user.id = token.sub;
       }
       return session;
     },
     async jwt({ token, user, account, profile, trigger }) {
-      console.log("JWT Callback - User:", user); // Log user in jwt callback
-      console.log("JWT Callback - Token (before):", token); // Log token before modification
       if (user) {
         token.sub = user.id?.toString();
       }
-      console.log("JWT Callback - Token (after):", token); // Log token after modification
       return token;
     },
   },

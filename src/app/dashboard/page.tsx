@@ -20,12 +20,6 @@ import { auth } from "~/server/auth";
 export default async function Page() {
   const session = await auth();
 
-  console.log(session);
-
-  // if(!session?.user) {
-  //   redirect('/');
-  // }
-
   const userData: User = {
     id: session?.user.id,
     name: session?.user.name,

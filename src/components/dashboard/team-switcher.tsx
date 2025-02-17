@@ -18,7 +18,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function TeamSwitcher({
   teams,

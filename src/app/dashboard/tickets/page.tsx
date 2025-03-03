@@ -85,7 +85,7 @@ export default function TicketsPage() {
   const statuses = [
     { value: "NEW", label: "New" },
     { value: "OPEN", label: "Open" },
-    { value: "IN_PROGRESS", label: "In Progress" },
+    { value: "INPROGRESS", label: "In Progress" },
     { value: "RESOLVED", label: "Resolved" },
     { value: "CLOSED", label: "Closed" }
   ];
@@ -248,9 +248,7 @@ export default function TicketsPage() {
                 {isLoadingStats ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  // For this one, we'd ideally have it in the stats endpoint
-                  // But we can estimate it for now
-                  Math.round((stats?.totalTickets || 0) * 0.3)
+                  stats?.inProgressTickets || 0
                 )}
               </div>
             </CardContent>

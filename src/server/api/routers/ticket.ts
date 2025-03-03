@@ -202,8 +202,20 @@ export const ticketRouter = createTRPCRouter({
       where: { 
         status: { 
           name: { 
-            in: ["NEW", "OPEN", "In Progress"], 
+            in: ["NEW", "OPEN"], 
             mode: "insensitive" 
+          } 
+        } 
+      },
+    });
+
+    // Get open tickets count
+    const inProgressTickets = await db.ticket.count({
+      where: { 
+        status: { 
+          name: { 
+            in: ["IN PROGRESS"], 
+            mode: "insensitive"
           } 
         } 
       },
@@ -258,6 +270,7 @@ export const ticketRouter = createTRPCRouter({
     return {
       totalTickets,
       openTickets,
+      inProgressTickets,
       closedTickets,
       users,
       weeklyOpenChange,

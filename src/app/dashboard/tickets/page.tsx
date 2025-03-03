@@ -84,17 +84,14 @@ export default function TicketsPage() {
   // Mock statuses and priorities (in a real app, these would come from the API)
   const statuses = [
     { value: "NEW", label: "New" },
-    { value: "OPEN", label: "Open" },
     { value: "INPROGRESS", label: "In Progress" },
     { value: "RESOLVED", label: "Resolved" },
-    { value: "CLOSED", label: "Closed" }
   ];
   
   const priorities = [
     { value: "LOW", label: "Low" },
     { value: "NORMAL", label: "Normal" },
     { value: "HIGH", label: "High" },
-    { value: "URGENT", label: "Urgent" }
   ];
 
   // Filter and sort the tickets
@@ -107,7 +104,7 @@ export default function TicketsPage() {
         
         // Status filter
         const matchesStatus = statusFilter.length === 0 || 
-          statusFilter.some(status => ticket.status.name.toUpperCase() === status);
+          statusFilter.some(status => ticket.status.id.toUpperCase() === status.toUpperCase());
         
         // Priority filter
         const matchesPriority = priorityFilter.length === 0 || 

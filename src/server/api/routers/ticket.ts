@@ -139,4 +139,141 @@ export const ticketRouter = createTRPCRouter({
         throw new Error("Error deleting ticket!");
       }
     }),
+
+    getStats: protectedProcedure.query(async ({ ctx }) => {
+      const { db } = ctx;
+      
+      // Get total tickets count
+      const totalTickets = await db.ticket.count();
+      
+      // Get open tickets count
+      const openTickets = await db.ticket.count({
+        where: { statusId: { notIn: ["COMPLETED"] } } // Assuming 3 is the ID for "COMPLETED" status
+      });
+      
+      // Get closed tickets count
+      const closedTickets = await db.ticket.count({
+        where: { statusId: "COMPLETED" } // Assuming 3 is the ID for "COMPLETED" status
+      });
+      
+      // Get user count
+      const users = await db.user.count();
+      
+      // Calculate weekly changes (example implementation)
+      // This is a simplified example - you'd typically compare with data from a week ago
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const openLastWeek = await db.ticket.count({
+        where: { 
+          statusId: { notIn: ["COMPLETED"] },
+          createdAt: { lt: oneWeekAgo }
+        }
+      });
+      
+      const closedLastWeek = await db.ticket.count({
+        where: { 
+          statusId: "COMPLETED",
+          updatedAt: { lt: oneWeekAgo }
+        }
+      });
+      
+      const weeklyOpenChange = openTickets - openLastWeek;
+      const weeklyClosedChange = closedTickets - closedLastWeek;
+      
+      return {
+        totalTickets,
+        openTickets,
+        closedTickets,
+        users,
+        weeklyOpenChange,
+        weeklyClosedChange
+      };
+    }),
+    
+    getRecent: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(50).default(5) }))
+      .query(async ({ ctx, input }) => {
+        const { db } = ctx;
+        
+        return await db.ticket.findMany({
+          take: input.limit,
+          orderBy: { createdAt: "desc" },
+          include: {
+            priority: true,
+            status: true,
+            assignedTo: true
+          }
+        });
+      }),
+    
+    getDistribution: protectedProcedure.query(async ({ ctx }) => {
+      const { db } = ctx;
+      
+      // Get ticket counts by status
+      const statusCounts = await db.$queryRaw`
+        SELECT ts.name as status, COUNT(*) as count
+        FROM "Ticket" t 
+        JOIN "TicketStatuses" ts ON t."statusId" = ts.id
+        GROUP BY ts.name
+      `;
+      
+      // Get ticket counts by priority
+      const priorityCounts = await db.$queryRaw`
+        SELECT tp.name as priority, COUNT(*) as count
+        FROM "Ticket" t 
+        JOIN "TicketPriorities" tp ON t."priorityId" = tp.id
+        GROUP BY tp.name
+      `;
+      
+      // Convert BigInt to Number
+      const formattedStatusCounts = Array.isArray(statusCounts) 
+        ? statusCounts.map(item => ({
+            status: item.status,
+            count: typeof item.count === 'bigint' ? Number(item.count) : item.count
+          }))
+        : [];
+
+      const formattedPriorityCounts = Array.isArray(priorityCounts)
+        ? priorityCounts.map(item => ({
+            priority: item.priority,
+            count: typeof item.count === 'bigint' ? Number(item.count) : item.count
+          }))
+        : [];
+      
+      return {
+        byStatus: formattedStatusCounts,
+        byPriority: formattedPriorityCounts
+      };
+    }),
+
+    getAnalytics: protectedProcedure.query(async ({ ctx }) => {
+      const { db } = ctx;
+      
+      const ticketsOverTime = await db.$queryRaw`
+        SELECT 
+          to_char(t."createdAt", 'YYYY-MM') as period,
+          COUNT(CASE WHEN t."statusId" != 'COMPLETED' THEN 1 END) as opened,
+          COUNT(CASE WHEN t."statusId" = 'COMPLETED' THEN 1 END) as completed
+        FROM "Ticket" t
+        WHERE t."createdAt" > current_date - interval '6 months'
+        GROUP BY to_char(t."createdAt", 'YYYY-MM')
+        ORDER BY period ASC
+      `;
+      
+      console.log(ticketsOverTime);
+
+      // Convert BigInt to Number
+      const formattedData = Array.isArray(ticketsOverTime)
+        ? ticketsOverTime.map(item => ({
+            period: item.period,
+            opened: typeof item.opened === 'bigint' ? Number(item.opened) : item.opened || 0,
+            completed: typeof item.completed === 'bigint' ? Number(item.completed) : item.completed || 0
+          }))
+        : [];
+      
+      return {
+        ticketsOverTime: formattedData
+      };
+    }),
 });

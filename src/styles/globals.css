@@ -100,3 +100,12 @@
   -ms-overflow-style: none; /* IE and Edge (legacy Edge) */
   scrollbar-width: none; /* Firefox */
 }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -40,17 +40,16 @@ const CreateTicketForm: React.FC = () => {
 
   const createTicketMutation = api.ticket.createTicket.useMutation({
     onSuccess: (createdTicket: any) => {
-      console.log("Ticket created successfully:", createdTicket);
       setSuccessMessage(
         `Ticket "${createdTicket.title}" created successfully!`,
       );
       setErrorMessage(null);
       reset(); // Clear the form
-      // Optionally: Redirect to ticket list page or ticket detail page
-      router.push(createdTicket.id);
+
+      // Redirect the user to the ticket
+      router.push(`dashboard/tickets/${createdTicket.id}`);
     },
     onError: (error: any) => {
-      console.error("Ticket creation failed:", error);
       setErrorMessage(error.toString());
       setSuccessMessage(null);
     },
@@ -60,7 +59,7 @@ const CreateTicketForm: React.FC = () => {
     setSuccessMessage(null); // Clear previous messages
     setErrorMessage(null);
 
-    const createdTicketId = createTicketMutation.mutate(data); // Call the tRPC mutation
+    createTicketMutation.mutate(data); // Call the tRPC mutation
   };
 
   return (

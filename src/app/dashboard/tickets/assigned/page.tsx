@@ -1,39 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  BarChart, 
-  CheckCircle, 
-  ChevronDown, 
-  FileDown, 
-  Filter, 
-  Plus, 
-  Search, 
-  SlidersHorizontal,
-  Clock,
-  AlertCircle 
-} from "lucide-react";
-import { api } from "~/trpc/react";
 import { SidebarInset } from "~/components/ui/sidebar";
 import { DashboardHeader } from "~/components/dashboard/dashboard-header";
+import { Search, Filter, SlidersHorizontal, CheckCircle, Clock, AlertTriangle, User as UserCheck } from "lucide-react";
+import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import {
   Table,
   TableBody,
@@ -43,9 +32,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Skeleton } from "~/components/ui/skeleton";
-import Link from "next/link";
 import {
   Pagination,
   PaginationContent,
@@ -55,15 +42,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "~/components/ui/pagination";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { auth } from "~/server/auth";
 
-export default function TicketsPage() {
+export default function AssignedTicketsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -71,17 +56,12 @@ export default function TicketsPage() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   
-  // Separate query for statistics - this will load first
-  const { data: stats, isLoading: isLoadingStats } = api.ticket.getStats.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-  });
-  
-  // Query for ticket data - this might take longer to load
-  const { data: tickets, isLoading: isLoadingTickets } = api.ticket.getTickets.useQuery(undefined, {
+  // Fetch tickets assigned to the current user
+  const { data: tickets, isLoading } = api.ticket.getAssignedTickets.useQuery(undefined, {
     refetchOnWindowFocus: false,
   });
 
-  // Mock statuses and priorities (in a real app, these would come from the API)
+  // Define statuses and priorities for filtering
   const statuses = [
     { value: "NEW", label: "New" },
     { value: "OPEN", label: "Open" },
@@ -164,6 +144,18 @@ export default function TicketsPage() {
       })
     : [];
 
+  // Calculate stats
+  const totalAssigned = filteredTickets.length;
+  const urgentTickets = filteredTickets.filter(t => 
+    t.priority.name.toUpperCase() === "URGENT" || t.priority.name.toUpperCase() === "HIGH"
+  ).length;
+  const newTickets = filteredTickets.filter(t => 
+    t.status.name.toUpperCase() === "NEW" || t.status.name.toUpperCase() === "OPEN"
+  ).length;
+  const inProgressTickets = filteredTickets.filter(t => 
+    t.status.name.toUpperCase() === "IN_PROGRESS"
+  ).length;
+
   // Get badge variants
   const getBadgeVariantForPriority = (priority: string): "default" | "secondary" | "destructive" | "outline" => {
     const priorityLower = priority.toLowerCase();
@@ -181,7 +173,7 @@ export default function TicketsPage() {
     return "outline";
   };
 
-  // Pagination logic (basic implementation)
+  // Pagination logic
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const totalPages = Math.ceil((filteredTickets?.length || 0) / itemsPerPage);
@@ -194,27 +186,31 @@ export default function TicketsPage() {
   return (
     <SidebarInset>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <DashboardHeader heading="Tickets" text="Manage and track support tickets">
-          <Button size="sm" onClick={() => router.push("/dashboard/tickets/create")}>
-            <Plus className="mr-2 h-4 w-4" /> New Ticket
+        <DashboardHeader heading="My Assigned Tickets" text="View and manage tickets assigned to you">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => router.push("/dashboard/tickets")}
+          >
+            View All Tickets
           </Button>
         </DashboardHeader>
         
-        {/* Stats - These will load first */}
+        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Tickets
+                Assigned to You
               </CardTitle>
-              <div className="h-4 w-4 text-muted-foreground" />
+              <UserCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {isLoadingStats ? (
+                {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  stats?.totalTickets || 0
+                  totalAssigned
                 )}
               </div>
             </CardContent>
@@ -228,10 +224,10 @@ export default function TicketsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {isLoadingStats ? (
+                {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  stats?.openTickets || 0
+                  newTickets
                 )}
               </div>
             </CardContent>
@@ -241,16 +237,14 @@ export default function TicketsPage() {
               <CardTitle className="text-sm font-medium">
                 In Progress
               </CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {isLoadingStats ? (
+                {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  // For this one, we'd ideally have it in the stats endpoint
-                  // But we can estimate it for now
-                  Math.round((stats?.totalTickets || 0) * 0.3)
+                  inProgressTickets
                 )}
               </div>
             </CardContent>
@@ -258,16 +252,16 @@ export default function TicketsPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Resolved
+                Urgent
               </CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {isLoadingStats ? (
+                {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  stats?.closedTickets || 0
+                  urgentTickets
                 )}
               </div>
             </CardContent>
@@ -397,136 +391,218 @@ export default function TicketsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9 gap-1">
-              <FileDown className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline-block">Export</span>
-            </Button>
-            <Button variant="outline" size="sm" className="h-9 gap-1">
-              <BarChart className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline-block">Analytics</span>
-            </Button>
-          </div>
         </div>
         
-        {/* Tickets Table */}
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="w-[300px]">Title</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Priority</TableHead>
-                <TableHead className="hidden md:table-cell">Assigned To</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingTickets ? (
-                // Loading skeletons for table
-                Array(5).fill(0).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-12" /></TableCell>
-                    <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                    <TableCell className="text-center"><Skeleton className="mx-auto h-5 w-20" /></TableCell>
-                    <TableCell className="text-center"><Skeleton className="mx-auto h-5 w-16" /></TableCell>
-                    <TableCell className="hidden md:table-cell"><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+        {/* View options */}
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="list">List View</TabsTrigger>
+            <TabsTrigger value="grid">Grid View</TabsTrigger>
+          </TabsList>
+          
+          {/* List View */}
+          <TabsContent value="list">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead className="hidden md:table-cell">Date</TableHead>
+                    <TableHead className="w-[300px]">Title</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Priority</TableHead>
+                    <TableHead className="hidden md:table-cell">Created By</TableHead>
                   </TableRow>
-                ))
-              ) : paginatedTickets.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No tickets found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                // Actual tickets
-                paginatedTickets.map((ticket) => (
-                  <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell 
-                      className="font-medium"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                    >
-                      {ticket.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell 
-                      className="hidden md:table-cell"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                    >
-                      {new Date(ticket.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell 
-                      className="font-medium"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                    >
-                      <Link 
-                        href={`/dashboard/tickets/${ticket.id}`}
-                        className="hover:text-primary hover:underline"
-                      >
-                        {ticket.title}
-                      </Link>
-                      <div className="block text-xs text-muted-foreground md:hidden">
-                        {new Date(ticket.createdAt).toLocaleDateString()}
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    // Loading skeletons
+                    Array(5).fill(0).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-12" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell className="text-center"><Skeleton className="mx-auto h-5 w-20" /></TableCell>
+                        <TableCell className="text-center"><Skeleton className="mx-auto h-5 w-16" /></TableCell>
+                        <TableCell className="hidden md:table-cell"><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : paginatedTickets.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        No tickets assigned to you found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    // Actual tickets
+                    paginatedTickets.map((ticket) => (
+                      <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell 
+                          className="font-medium"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        >
+                          {ticket.id.slice(0, 8)}
+                        </TableCell>
+                        <TableCell 
+                          className="hidden md:table-cell"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        >
+                          {new Date(ticket.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell 
+                          className="font-medium"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        >
+                          <Link 
+                            href={`/dashboard/tickets/${ticket.id}`}
+                            className="hover:text-primary hover:underline"
+                          >
+                            {ticket.title}
+                          </Link>
+                          <div className="block text-xs text-muted-foreground md:hidden">
+                            {new Date(ticket.createdAt).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell 
+                          className="text-center"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        >
+                          <Badge
+                            variant={getBadgeVariantForStatus(ticket.status.name)}
+                            className="inline-block"
+                          >
+                            {ticket.status.name}
+                          </Badge>
+                        </TableCell>
+                        <TableCell 
+                          className="text-center"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        >
+                          <Badge
+                            variant={getBadgeVariantForPriority(ticket.priority.name)}
+                            className="inline-block"
+                          >
+                            {ticket.priority.name}
+                          </Badge>
+                        </TableCell>
+                        <TableCell 
+                          className="hidden md:table-cell"
+                          onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                        >
+                          {ticket.createdBy ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage
+                                  src={ticket.createdBy.image || ""}
+                                  alt={ticket.createdBy.name || ""}
+                                />
+                                <AvatarFallback>
+                                  {ticket.createdBy.name
+                                    ? ticket.createdBy.name.charAt(0).toUpperCase()
+                                    : "U"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">
+                                {ticket.createdBy.name || ticket.createdBy.email}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Unknown</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+          
+          {/* Grid View */}
+          <TabsContent value="grid">
+            {isLoading ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array(6).fill(0).map((_, i) => (
+                  <Card key={i} className="h-[200px]">
+                    <CardHeader>
+                      <Skeleton className="h-5 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-16 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : paginatedTickets.length === 0 ? (
+              <Card className="p-8 text-center">
+                <CardContent>
+                  <p className="text-muted-foreground">No tickets assigned to you found.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {paginatedTickets.map((ticket) => (
+                  <Card 
+                    key={ticket.id} 
+                    className="cursor-pointer hover:bg-muted/30 hover:shadow-md transition-all"
+                    onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg hover:text-primary hover:underline">
+                          <Link href={`/dashboard/tickets/${ticket.id}`}>
+                            {ticket.title}
+                          </Link>
+                        </CardTitle>
+                        <Badge
+                          variant={getBadgeVariantForPriority(ticket.priority.name)}
+                          className="ml-2"
+                        >
+                          {ticket.priority.name}
+                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell 
-                      className="text-center"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                    >
-                      <Badge
-                        variant={getBadgeVariantForStatus(ticket.status.name)}
-                        className="inline-block"
-                      >
-                        {ticket.status.name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell 
-                      className="text-center"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                    >
-                      <Badge
-                        variant={getBadgeVariantForPriority(ticket.priority.name)}
-                        className="inline-block"
-                      >
-                        {ticket.priority.name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell 
-                      className="hidden md:table-cell"
-                      onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}
-                    >
-                      {ticket.assignedTo ? (
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={ticket.assignedTo.image || ""}
-                              alt={ticket.assignedTo.name || ""}
-                            />
-                            <AvatarFallback>
-                              {ticket.assignedTo.name
-                                ? ticket.assignedTo.name.charAt(0).toUpperCase()
-                                : "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm">
-                            {ticket.assignedTo.name || ticket.assignedTo.email}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">Unassigned</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                      <CardDescription>
+                        Created {new Date(ticket.createdAt).toLocaleDateString()}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-4">
+                      <div className="line-clamp-2 text-sm text-muted-foreground mb-4">
+                        {ticket.description || "No description provided."}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <Badge variant={getBadgeVariantForStatus(ticket.status.name)}>
+                          {ticket.status.name}
+                        </Badge>
+                        {ticket.createdBy && (
+                          <div className="flex items-center gap-1">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage
+                                src={ticket.createdBy.image || ""}
+                                alt={ticket.createdBy.name || ""}
+                              />
+                              <AvatarFallback className="text-xs">
+                                {ticket.createdBy.name
+                                  ? ticket.createdBy.name.charAt(0).toUpperCase()
+                                  : "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-muted-foreground">
+                              {ticket.createdBy.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
         
         {/* Pagination */}
-        {!isLoadingTickets && totalPages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <Pagination className="mt-4">
             <PaginationContent>
               <PaginationItem>

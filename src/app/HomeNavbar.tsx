@@ -61,7 +61,7 @@ const HomeNavbar = () => {
             </Button>
           </Link>
           <Link href="/auth/signup">
-            <Button size="sm" className="shiny-button">
+            <Button size="sm">
               Sign Up
             </Button>
           </Link>

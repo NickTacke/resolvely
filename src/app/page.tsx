@@ -32,7 +32,7 @@ export default function HomePage() {
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/auth/signup">
-              <Button size="lg" className="shiny-button">
+              <Button size="lg">
                 Get Started <Rocket className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -158,7 +158,7 @@ export default function HomePage() {
                   <li>Basic Reporting</li>
                   <li>Email Support</li>
                 </ul>
-                <Button className="shiny-button w-full">Choose Basic</Button>
+                <Button className="w-full">Choose Basic</Button>
               </CardContent>
             </Card>
             {/* Pricing Card - Pro */}
@@ -183,7 +183,7 @@ export default function HomePage() {
                   <li>Priority Support</li>
                 </ul>
                 <Button
-                  className="shiny-button relative w-full"
+                  className="relative w-full"
                   style={{ bottom: "0px" }}
                 >
                   Choose Pro
@@ -229,7 +229,7 @@ export default function HomePage() {
             from day one.
           </p>
           <Link href="/auth/signup">
-            <Button size="lg" className="shiny-button">
+            <Button size="lg">
               Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>

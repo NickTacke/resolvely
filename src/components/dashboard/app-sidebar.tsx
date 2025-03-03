@@ -22,7 +22,7 @@ const data = {
     {
       name: "Resolvely",
       logo: TicketCheck,
-      plan: "Trial",
+      plan: "Enterprise",
     }
   ]
 };

@@ -184,7 +184,7 @@ export function DashboardClientSection({ stats, distribution, recentTickets }: D
                             <span>• Assigned to: {ticket.assignedTo.name}</span>
                           )}
                         </div>
-                        <p className="line-clamp-1 text-sm text-muted-foreground mt-1">
+                        <p className="line-clamp-1 max-w-lg text-sm text-muted-foreground mt-1">
                           {ticket.description || "No description provided."}
                         </p>
                       </div>

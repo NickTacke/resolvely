@@ -47,7 +47,7 @@ const CreateTicketForm: React.FC = () => {
       reset(); // Clear the form
 
       // Redirect the user to the ticket
-      router.push(`dashboard/tickets/${createdTicket.id}`);
+      router.push(`${createdTicket.id}`);
     },
     onError: (error: any) => {
       setErrorMessage(error.toString());

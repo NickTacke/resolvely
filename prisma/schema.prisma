@@ -96,7 +96,7 @@ model TicketPriority {
 model Comment {
   id        String   @id @default(cuid())
   content   String 
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   ticketId  String   // Foreign key for Ticket
   author    User     @relation(fields: [authorId], references: [id])
   authorId  String   // Foreign key for User (comment author)

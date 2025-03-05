@@ -219,7 +219,7 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
   const handleAssignTicket = (userId: string) => {
     updateTicketMutation.mutate({
       id: ticket?.id as string,
-      assignedToId: userId,
+      assignedToId: userId === "" ? null : userId,
     });
     setIsAssignDialogOpen(false);
   };

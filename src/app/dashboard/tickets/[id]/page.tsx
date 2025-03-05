@@ -9,7 +9,7 @@ export async function generateMetadata(
   { params }: { params: { id: string } },
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const id = params.id;
+  const { id } = await params;
   
   try {
     const ticket = await api.ticket.getTicketById({ id });
@@ -33,7 +33,7 @@ export async function generateMetadata(
 }
 
 export default async function TicketPage({ params }: { params: { id: string } }) {
-  const id = params.id;
+  const { id } = await params;
   
   try {
     // Server-side data fetching for initial load

@@ -81,18 +81,13 @@ export default function TicketsPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Mock statuses and priorities (in a real app, these would come from the API)
-  const statuses = [
-    { value: "NEW", label: "New" },
-    { value: "INPROGRESS", label: "In Progress" },
-    { value: "RESOLVED", label: "Resolved" },
-  ];
+  const { data: statusOptions, isLoading: isLoadingStatuses } = api.ticket.getStatuses.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
   
-  const priorities = [
-    { value: "LOW", label: "Low" },
-    { value: "NORMAL", label: "Normal" },
-    { value: "HIGH", label: "High" },
-  ];
+  const { data: priorityOptions, isLoading: isLoadingPriorities } = api.ticket.getPriorities.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
 
   // Filter and sort the tickets
   const filteredTickets = tickets
@@ -291,38 +286,38 @@ export default function TicketsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[200px]">
                 <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                {statuses.map((status) => (
+                {statusOptions?.map((status) => (
                   <DropdownMenuCheckboxItem
-                    key={status.value}
-                    checked={statusFilter.includes(status.value)}
+                    key={status.id}
+                    checked={statusFilter.includes(status.id)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setStatusFilter([...statusFilter, status.value]);
+                        setStatusFilter([...statusFilter, status.id]);
                       } else {
-                        setStatusFilter(statusFilter.filter((s) => s !== status.value));
+                        setStatusFilter(statusFilter.filter((s) => s !== status.id));
                       }
                       setCurrentPage(1); // Reset to first page on filter change
                     }}
                   >
-                    {status.label}
+                    {status.name}
                   </DropdownMenuCheckboxItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Filter by Priority</DropdownMenuLabel>
-                {priorities.map((priority) => (
+                {priorityOptions?.map((priority) => (
                   <DropdownMenuCheckboxItem
-                    key={priority.value}
-                    checked={priorityFilter.includes(priority.value)}
+                    key={priority.id}
+                    checked={priorityFilter.includes(priority.id)}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        setPriorityFilter([...priorityFilter, priority.value]);
+                        setPriorityFilter([...priorityFilter, priority.id]);
                       } else {
-                        setPriorityFilter(priorityFilter.filter((p) => p !== priority.value));
+                        setPriorityFilter(priorityFilter.filter((p) => p !== priority.id));
                       }
                       setCurrentPage(1); // Reset to first page on filter change
                     }}
                   >
-                    {priority.label}
+                    {priority.name}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>

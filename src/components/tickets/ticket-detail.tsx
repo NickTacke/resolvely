@@ -137,11 +137,17 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
   const [newComment, setNewComment] = useState("");
   
   // Use tRPC to get the latest ticket data and handle updates
-  const { data: ticket, isLoading, isError, refetch } = api.ticket.getTicketById.useQuery(
+  const { data: ticket, isPending, isError, refetch } = api.ticket.getTicketById.useQuery(
     { id: initialTicket.id },
     {
-      initialData: initialTicket,
       refetchOnWindowFocus: false,
+    }
+  );
+
+  const { data: users, isPending: isPendingUsers } = api.ticket.getUsers.useQuery(
+    undefined,
+    {
+      refetchOnWindowFocus: false
     }
   );
 
@@ -186,7 +192,7 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
   // Handle form submission for updating the ticket
   const handleUpdateTicket = () => {
     updateTicketMutation.mutate({
-      id: ticket.id,
+      id: ticket?.id as string,
       title,
       description,
       statusId: selectedStatus,
@@ -196,14 +202,14 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
 
   // Handle ticket deletion
   const handleDeleteTicket = () => {
-    deleteTicketMutation.mutate({ id: ticket.id });
+    deleteTicketMutation.mutate({ id: ticket?.id as string });
   };
 
   // Handle submitting a new comment
   const handleSubmitComment = () => {
     if (newComment.trim()) {
       addCommentMutation.mutate({
-        ticketId: ticket.id,
+        ticketId: ticket?.id as string,
         content: newComment,
       });
     }
@@ -212,14 +218,14 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
   // Handle assigning the ticket
   const handleAssignTicket = (userId: string) => {
     updateTicketMutation.mutate({
-      id: ticket.id,
+      id: ticket?.id as string,
       assignedToId: userId,
     });
     setIsAssignDialogOpen(false);
   };
 
   // If we're still loading, show a skeleton UI
-  if (isLoading && !ticket) {
+  if (isPending && !ticket) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center">
@@ -330,10 +336,10 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
                 variant="default" 
                 className="gap-1" 
                 onClick={handleUpdateTicket}
-                disabled={updateTicketMutation.isLoading}
+                disabled={updateTicketMutation.isPending}
               >
                 <CheckCircle className="h-3.5 w-3.5" />
-                <span>{updateTicketMutation.isLoading ? "Saving..." : "Save Changes"}</span>
+                <span>{updateTicketMutation.isPending ? "Saving..." : "Save Changes"}</span>
               </Button>
               
               <Button 
@@ -463,7 +469,7 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
                 onSubmitComment={handleSubmitComment}
                 newComment={newComment}
                 setNewComment={setNewComment}
-                isSubmitting={addCommentMutation.isLoading}
+                isSubmitting={addCommentMutation.isPending}
               />
             </TabsContent>
             <TabsContent value="activity" className="space-y-4 pt-4">
@@ -625,9 +631,9 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
             <Button 
               variant="destructive" 
               onClick={handleDeleteTicket}
-              disabled={deleteTicketMutation.isLoading}
+              disabled={deleteTicketMutation.isPending}
             >
-              {deleteTicketMutation.isLoading ? "Deleting..." : "Delete Ticket"}
+              {deleteTicketMutation.isPending ? "Deleting..." : "Delete Ticket"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -644,46 +650,49 @@ export function TicketDetail({ initialTicket, statuses, priorities }: TicketDeta
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {/* In a real app, you would fetch users from API */}
-            {/* This is a simplified example */}
-            <div 
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
-              onClick={() => handleAssignTicket("user1")}
-            >
-              <Avatar>
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">John Doe</span>
-                <span className="text-xs text-muted-foreground">john@example.com</span>
+            {isPendingUsers ? (
+              // Loading skeleton
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2 p-2">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex flex-col flex-1">
+                      <Skeleton className="h-4 w-24 mb-1" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : users && users.length > 0 ? (
+              // Display users from API
+              <>
+                {users.map((user) => (
+                  <div 
+                    key={user.id}
+                    className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                    onClick={() => handleAssignTicket(user.id)}
+                  >
+                    <Avatar>
+                      <AvatarImage src={user.image || ""} />
+                      <AvatarFallback>
+                        {user.name
+                          ? user.name.charAt(0).toUpperCase()
+                          : user.email?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{user.name || "Unnamed User"}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              // No users found
+              <div className="text-center py-4 text-muted-foreground">
+                No team members available for assignment.
               </div>
-            </div>
-            
-            <div 
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
-              onClick={() => handleAssignTicket("user2")}
-            >
-              <Avatar>
-                <AvatarFallback>AS</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Alice Smith</span>
-                <span className="text-xs text-muted-foreground">alice@example.com</span>
-              </div>
-            </div>
-            
-            <div 
-              className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer"
-              onClick={() => handleAssignTicket("user3")}
-            >
-              <Avatar>
-                <AvatarFallback>BJ</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Bob Johnson</span>
-                <span className="text-xs text-muted-foreground">bob@example.com</span>
-              </div>
-            </div>
+            )}
             
             <Separator />
             

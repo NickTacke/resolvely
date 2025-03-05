@@ -424,4 +424,227 @@ export const ticketRouter = createTRPCRouter({
       throw new Error("Error fetching assigned tickets!");
     }
   }),
+
+  getActivityLog: protectedProcedure
+  .input(z.object({ limit: z.number().min(1).max(50).default(10) }))
+  .query(async ({ ctx, input }) => {
+    const { db } = ctx;
+    
+    // First let's get the most recent tickets
+    const recentTickets = await db.ticket.findMany({
+      take: input.limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        createdBy: true,
+        assignedTo: true,
+        status: true,
+        priority: true
+      }
+    });
+    
+    // Then get recent comments
+    const recentComments = await db.comment.findMany({
+      take: input.limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: true,
+        ticket: true
+      }
+    });
+    
+    // Now let's transform these into activity items
+    const ticketActivities = recentTickets.map(ticket => ({
+      id: `ticket-${ticket.id}`,
+      type: "ticket-created",
+      timestamp: ticket.createdAt,
+      actor: ticket.createdBy,
+      data: {
+        ticketId: ticket.id,
+        ticketTitle: ticket.title
+      }
+    }));
+    
+    const commentActivities = recentComments.map(comment => ({
+      id: `comment-${comment.id}`,
+      type: "comment-added",
+      timestamp: comment.createdAt,
+      actor: comment.author,
+      data: {
+        ticketId: comment.ticketId,
+        ticketTitle: comment.ticket.title,
+        commentId: comment.id,
+        commentPreview: comment.content.substring(0, 50) + (comment.content.length > 50 ? "..." : "")
+      }
+    }));
+    
+    // Get some status changes - this is a simplified approach
+    // In a real app, you would track all status changes in a separate table
+    const assignmentChanges = await db.ticket.findMany({
+      where: {
+        assignedToId: { not: null }
+      },
+      take: input.limit,
+      orderBy: { updatedAt: "desc" },
+      include: {
+        assignedTo: true,
+        createdBy: true
+      }
+    });
+    
+    const assignmentActivities = assignmentChanges.map(ticket => ({
+      id: `assignment-${ticket.id}`,
+      type: "ticket-assigned",
+      timestamp: ticket.updatedAt,
+      actor: ticket.createdBy,
+      data: {
+        ticketId: ticket.id,
+        ticketTitle: ticket.title,
+        assignee: ticket.assignedTo
+      }
+    }));
+    
+    // Combine and sort all activities by timestamp (newest first)
+    const allActivities = [
+      ...ticketActivities,
+      ...commentActivities,
+      ...assignmentActivities
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    // Take only the most recent activity items
+    return allActivities.slice(0, input.limit);
+  }),
+
+// Add this endpoint to get users for ticket assignment
+getUsers: protectedProcedure.query(async ({ ctx }) => {
+  const { db } = ctx;
+  
+  try {
+    const users = await db.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true
+      },
+      orderBy: {
+        name: "asc"
+      }
+    });
+    
+    return users;
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    throw new Error("Error fetching users!");
+  }
+}),
+
+// Add a teams endpoint if needed
+getTeams: protectedProcedure.query(async ({ ctx }) => {
+  // In a real app, you would have a teams table
+  // For now, we'll return a simple mock response that could be replaced
+  // with real data when you implement teams functionality
+  return [
+    {
+      id: "team-1",
+      name: "Resolvely",
+      logo: "TicketCheck", // Frontend will map this string to the actual icon
+      plan: "Enterprise"
+    }
+  ];
+}),
+
+// Add a getTicketTimeline endpoint
+getTicketTimeline: protectedProcedure
+  .input(z.object({ 
+    ticketId: z.string().min(1, { message: "Ticket ID is required!" }) 
+  }))
+  .query(async ({ ctx, input }) => {
+    const { db } = ctx;
+    
+    // Get the ticket with all related data
+    const ticket = await db.ticket.findUnique({
+      where: { id: input.ticketId },
+      include: {
+        createdBy: true,
+        assignedTo: true,
+        status: true,
+        priority: true,
+        comments: {
+          include: { author: true },
+          orderBy: { createdAt: "asc" }
+        }
+      }
+    });
+    
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    
+    // Create a timeline from real data
+    const timeline = [];
+    
+    // Add ticket creation event
+    timeline.push({
+      id: `creation-${ticket.id}`,
+      type: "ticket_created",
+      timestamp: ticket.createdAt,
+      actor: ticket.createdBy,
+      data: {
+        ticketId: ticket.id,
+        ticketTitle: ticket.title
+      }
+    });
+    
+    // Add assignment event if assigned
+    if (ticket.assignedTo) {
+      timeline.push({
+        id: `assigned-${ticket.id}`,
+        type: "ticket_assigned",
+        timestamp: ticket.updatedAt,
+        actor: ticket.createdBy, // This is an assumption, in a real app you'd track who made the assignment
+        data: {
+          assignee: ticket.assignedTo
+        }
+      });
+    }
+    
+    // Add status and priority information
+    timeline.push({
+      id: `status-${ticket.id}`,
+      type: "status_changed",
+      timestamp: ticket.updatedAt,
+      actor: ticket.assignedTo || ticket.createdBy,
+      data: {
+        newStatus: ticket.status.name
+      }
+    });
+    
+    timeline.push({
+      id: `priority-${ticket.id}`,
+      type: "priority_changed",
+      timestamp: ticket.updatedAt,
+      actor: ticket.assignedTo || ticket.createdBy,
+      data: {
+        newPriority: ticket.priority.name
+      }
+    });
+    
+    // Add comment events
+    ticket.comments.forEach(comment => {
+      timeline.push({
+        id: `comment-${comment.id}`,
+        type: "comment_added",
+        timestamp: comment.createdAt,
+        actor: comment.author,
+        data: {
+          commentId: comment.id,
+          commentPreview: comment.content.substring(0, 50) + (comment.content.length > 50 ? "..." : "")
+        }
+      });
+    });
+    
+    // Sort the timeline by timestamp (newest first)
+    return timeline.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  })
 });

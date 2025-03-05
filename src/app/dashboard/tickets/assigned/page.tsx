@@ -61,21 +61,13 @@ export default function AssignedTicketsPage() {
     refetchOnWindowFocus: false,
   });
 
-  // Define statuses and priorities for filtering
-  const statuses = [
-    { value: "NEW", label: "New" },
-    { value: "OPEN", label: "Open" },
-    { value: "IN_PROGRESS", label: "In Progress" },
-    { value: "RESOLVED", label: "Resolved" },
-    { value: "CLOSED", label: "Closed" }
-  ];
+  const { data: statusOptions, isLoading: isLoadingStatuses } = api.ticket.getStatuses.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
   
-  const priorities = [
-    { value: "LOW", label: "Low" },
-    { value: "NORMAL", label: "Normal" },
-    { value: "HIGH", label: "High" },
-    { value: "URGENT", label: "Urgent" }
-  ];
+  const { data: priorityOptions, isLoading: isLoadingPriorities } = api.ticket.getPriorities.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
 
   // Filter and sort the tickets
   const filteredTickets = tickets
@@ -290,39 +282,39 @@ export default function AssignedTicketsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-[200px]">
                 <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                {statuses.map((status) => (
-                  <DropdownMenuCheckboxItem
-                    key={status.value}
-                    checked={statusFilter.includes(status.value)}
+                {statusOptions?.map((status) => (
+                <DropdownMenuCheckboxItem
+                    key={status.id}
+                    checked={statusFilter.includes(status.name.toUpperCase())}
                     onCheckedChange={(checked) => {
-                      if (checked) {
-                        setStatusFilter([...statusFilter, status.value]);
-                      } else {
-                        setStatusFilter(statusFilter.filter((s) => s !== status.value));
-                      }
-                      setCurrentPage(1); // Reset to first page on filter change
+                    if (checked) {
+                        setStatusFilter([...statusFilter, status.name.toUpperCase()]);
+                    } else {
+                        setStatusFilter(statusFilter.filter((s) => s !== status.name.toUpperCase()));
+                    }
+                    setCurrentPage(1); // Reset to first page on filter change
                     }}
-                  >
-                    {status.label}
-                  </DropdownMenuCheckboxItem>
+                >
+                    {status.name}
+                </DropdownMenuCheckboxItem>
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Filter by Priority</DropdownMenuLabel>
-                {priorities.map((priority) => (
-                  <DropdownMenuCheckboxItem
-                    key={priority.value}
-                    checked={priorityFilter.includes(priority.value)}
+                {priorityOptions?.map((priority) => (
+                <DropdownMenuCheckboxItem
+                    key={priority.id}
+                    checked={priorityFilter.includes(priority.name.toUpperCase())}
                     onCheckedChange={(checked) => {
-                      if (checked) {
-                        setPriorityFilter([...priorityFilter, priority.value]);
-                      } else {
-                        setPriorityFilter(priorityFilter.filter((p) => p !== priority.value));
-                      }
-                      setCurrentPage(1); // Reset to first page on filter change
+                    if (checked) {
+                        setPriorityFilter([...priorityFilter, priority.name.toUpperCase()]);
+                    } else {
+                        setPriorityFilter(priorityFilter.filter((p) => p !== priority.name.toUpperCase()));
+                    }
+                    setCurrentPage(1); // Reset to first page on filter change
                     }}
-                  >
-                    {priority.label}
-                  </DropdownMenuCheckboxItem>
+                >
+                    {priority.name}
+                </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>

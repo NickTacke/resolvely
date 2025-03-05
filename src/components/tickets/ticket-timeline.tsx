@@ -13,151 +13,22 @@ import {
 import { Card } from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
-
-interface Ticket {
-  id: string;
-  title: string;
-  status: {
-    id: string;
-    name: string;
-  };
-  priority: {
-    id: string;
-    name: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-  assignedTo: {
-    id: string;
-    name: string | null;
-    email: string | null;
-    image: string | null;
-  } | null;
-  createdBy: {
-    id: string;
-    name: string | null;
-    email: string | null;
-    image: string | null;
-  } | null;
-  comments?: {
-    id: string;
-    content: string;
-    author: {
-      id: string;
-      name: string | null;
-      email: string | null;
-      image: string | null;
-    };
-    createdAt: Date;
-  }[];
-}
-
-interface TimelineEvent {
-  id: string;
-  type: string;
-  timestamp: Date;
-  actor?: {
-    id: string;
-    name: string | null;
-    email: string | null;
-    image: string | null;
-  };
-  data?: any;
-}
+import { api } from "~/trpc/react";
+import { Skeleton } from "~/components/ui/skeleton";
+import Link from "next/link";
 
 interface TicketTimelineProps {
-  ticket: Ticket;
+  ticket: {
+    id: string;
+  };
 }
 
 export function TicketTimeline({ ticket }: TicketTimelineProps) {
-  // Create a timeline from the ticket data
-  // In a real app, you'd likely have a proper activity log in the database
-  // This is a simplified example that reconstructs a timeline from available data
-  const generateTimeline = (ticket: Ticket): TimelineEvent[] => {
-    const timeline: TimelineEvent[] = [];
-    
-    // Add ticket creation event
-    timeline.push({
-      id: `creation-${ticket.id}`,
-      type: "ticket_created",
-      timestamp: new Date(ticket.createdAt),
-      actor: ticket.createdBy,
-      data: {
-        ticketId: ticket.id,
-        ticketTitle: ticket.title,
-      },
-    });
-    
-    // Add assignment event if assigned
-    if (ticket.assignedTo) {
-      timeline.push({
-        id: `assigned-${ticket.id}`,
-        type: "ticket_assigned",
-        // Use a timestamp slightly after creation
-        timestamp: new Date(new Date(ticket.createdAt).getTime() + 60000),
-        actor: ticket.createdBy, // Assume creator assigned it
-        data: {
-          assignee: ticket.assignedTo,
-        },
-      });
-    }
-    
-    // Add status changes based on the current status
-    // This is simulated - in a real app you'd have actual status change records
-    if (ticket.status.name.toLowerCase() !== "new" && ticket.status.name.toLowerCase() !== "open") {
-      timeline.push({
-        id: `status-${ticket.id}`,
-        type: "status_changed",
-        // Use a timestamp between creation and last update
-        timestamp: new Date(
-          new Date(ticket.createdAt).getTime() + 
-          (new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime()) / 2
-        ),
-        actor: ticket.assignedTo || ticket.createdBy,
-        data: {
-          newStatus: ticket.status.name,
-        },
-      });
-    }
-    
-    // Add priority change event if not default
-    if (ticket.priority.name.toLowerCase() !== "normal" && ticket.priority.name.toLowerCase() !== "medium") {
-      timeline.push({
-        id: `priority-${ticket.id}`,
-        type: "priority_changed",
-        // Use a timestamp between creation and status change
-        timestamp: new Date(
-          new Date(ticket.createdAt).getTime() + 
-          (new Date(ticket.updatedAt).getTime() - new Date(ticket.createdAt).getTime()) / 3
-        ),
-        actor: ticket.assignedTo || ticket.createdBy,
-        data: {
-          newPriority: ticket.priority.name,
-        },
-      });
-    }
-    
-    // Add comment events
-    if (ticket.comments) {
-      ticket.comments.forEach((comment) => {
-        timeline.push({
-          id: `comment-${comment.id}`,
-          type: "comment_added",
-          timestamp: new Date(comment.createdAt),
-          actor: comment.author,
-          data: {
-            commentId: comment.id,
-            commentPreview: comment.content.substring(0, 50) + (comment.content.length > 50 ? "..." : ""),
-          },
-        });
-      });
-    }
-    
-    // Sort the timeline by timestamp (newest first)
-    return timeline.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  };
-
-  const timeline = generateTimeline(ticket);
+  // Fetch timeline data from the API
+  const { data: timeline, isLoading, isError } = api.ticket.getTicketTimeline.useQuery(
+    { ticketId: ticket.id },
+    { refetchOnWindowFocus: false }
+  );
   
   // Format date to readable string
   const formatDate = (date: Date) => {
@@ -188,7 +59,7 @@ export function TicketTimeline({ ticket }: TicketTimelineProps) {
   };
   
   // Get event description
-  const getEventDescription = (event: TimelineEvent) => {
+  const getEventDescription = (event: any) => {
     const actorName = event.actor?.name || event.actor?.email || "Unknown user";
     
     switch (event.type) {
@@ -203,7 +74,7 @@ export function TicketTimeline({ ticket }: TicketTimelineProps) {
           <>
             <span className="font-medium">{actorName}</span> assigned this ticket to{" "}
             <span className="font-medium">
-              {event.data.assignee.name || event.data.assignee.email}
+              {event.data.assignee?.name || event.data.assignee?.email || "a team member"}
             </span>
           </>
         );
@@ -239,48 +110,78 @@ export function TicketTimeline({ ticket }: TicketTimelineProps) {
     }
   };
 
-  return (
-    <div className="space-y-4">
-      {timeline.length > 0 ? (
-        <div className="space-y-4">
-          {timeline.map((event) => (
-            <Card key={event.id} className="overflow-hidden">
-              <div className="p-4">
-                <div className="flex items-start gap-3">
-                  {event.actor ? (
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={event.actor.image || ""} />
-                      <AvatarFallback>
-                        {event.actor.name
-                          ? event.actor.name.charAt(0).toUpperCase()
-                          : "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      {getEventIcon(event.type)}
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 space-y-1">
-                    <div className="text-sm">{getEventDescription(event)}</div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      <Clock className="mr-1 h-3 w-3" />
-                      {formatDate(event.timestamp)}
-                    </div>
-                  </div>
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="overflow-hidden">
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/4" />
                 </div>
               </div>
-            </Card>
-          ))}
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <div className="p-8 text-center text-muted-foreground">
+          <p>Error loading timeline data. Please try again later.</p>
         </div>
-      ) : (
-        <Card>
-          <div className="p-8 text-center text-muted-foreground">
-            <p>No activity recorded yet.</p>
+      </Card>
+    );
+  }
+
+  if (!timeline || timeline.length === 0) {
+    return (
+      <Card>
+        <div className="p-8 text-center text-muted-foreground">
+          <p>No activity recorded yet.</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {timeline.map((event) => (
+        <Card key={event.id} className="overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              {event.actor ? (
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={event.actor.image || ""} />
+                  <AvatarFallback>
+                    {event.actor.name
+                      ? event.actor.name.charAt(0).toUpperCase()
+                      : "U"}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                  {getEventIcon(event.type)}
+                </div>
+              )}
+              
+              <div className="flex-1 space-y-1">
+                <div className="text-sm">{getEventDescription(event)}</div>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Clock className="mr-1 h-3 w-3" />
+                  {formatDate(event.timestamp)}
+                </div>
+              </div>
+            </div>
           </div>
         </Card>
-      )}
+      ))}
     </div>
   );
 }

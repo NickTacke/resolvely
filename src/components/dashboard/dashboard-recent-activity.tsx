@@ -4,90 +4,21 @@ import React from "react";
 import { ArrowRight, Box, Circle, Clock, FileCheck, MessageSquare, Tag, UserPlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import Link from "next/link";
+import { api } from "~/trpc/react";
+import { Skeleton } from "~/components/ui/skeleton";
 
-// This is a placeholder component that would ideally use real activity data
-// We'll simulate activity for now, but in a real app it would come from an API
+// Updated to use the API instead of mock data
 function DashboardRecentActivity() {
-  const activityItems = [
+  // Fetch recent activity from the API
+  const { data: activityItems, isLoading, error } = api.ticket.getActivityLog.useQuery(
+    { limit: 5 },
     {
-      id: 1,
-      type: "ticket-created",
-      user: {
-        name: "John Doe",
-        email: "john@example.com",
-        image: ""
-      },
-      ticket: {
-        id: "T-1234",
-        title: "Login issue after update"
-      },
-      timestamp: new Date(Date.now() - 45 * 60000)
-    },
-    {
-      id: 2,
-      type: "ticket-assigned",
-      user: {
-        name: "Sarah Johnson",
-        email: "sarah@example.com",
-        image: ""
-      },
-      assignee: {
-        name: "Mike Wilson",
-        email: "mike@example.com",
-      },
-      ticket: {
-        id: "T-1233",
-        title: "Dashboard showing error"
-      },
-      timestamp: new Date(Date.now() - 2 * 60 * 60000)
-    },
-    {
-      id: 3,
-      type: "comment-added",
-      user: {
-        name: "Alex Turner",
-        email: "alex@example.com",
-        image: ""
-      },
-      ticket: {
-        id: "T-1230",
-        title: "Feature request: dark mode"
-      },
-      timestamp: new Date(Date.now() - 6 * 60 * 60000)
-    },
-    {
-      id: 4,
-      type: "ticket-resolved",
-      user: {
-        name: "Mike Wilson",
-        email: "mike@example.com",
-        image: ""
-      },
-      ticket: {
-        id: "T-1228",
-        title: "Payment not processing"
-      },
-      timestamp: new Date(Date.now() - 12 * 60 * 60000)
-    },
-    {
-      id: 5,
-      type: "ticket-priority",
-      user: {
-        name: "Lisa Chen",
-        email: "lisa@example.com",
-        image: ""
-      },
-      ticket: {
-        id: "T-1226",
-        title: "API Integration failure"
-      },
-      priority: "HIGH",
-      timestamp: new Date(Date.now() - 24 * 60 * 60000)
+      refetchOnWindowFocus: false,
     }
-  ];
+  );
 
   function timeAgo(date: Date) {
-    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     let interval = seconds / 31536000;
   
     if (interval > 1) {
@@ -120,8 +51,10 @@ function DashboardRecentActivity() {
         return <UserPlus className="h-4 w-4" />;
       case "comment-added":
         return <MessageSquare className="h-4 w-4" />;
+      case "status_changed":
       case "ticket-resolved":
         return <FileCheck className="h-4 w-4" />;
+      case "priority_changed":
       case "ticket-priority":
         return <Tag className="h-4 w-4" />;
       default:
@@ -130,52 +63,54 @@ function DashboardRecentActivity() {
   }
 
   function getActivityMessage(item: any) {
+    const actorName = item.actor?.name || item.actor?.email || "Unknown user";
+    
     switch (item.type) {
       case "ticket-created":
         return (
           <>
-            <span className="font-medium">{item.user.name}</span> created ticket{" "}
-            <Link href="#" className="font-medium text-primary hover:underline">
-              {item.ticket.title}
+            <span className="font-medium">{actorName}</span> created ticket{" "}
+            <Link href={`/dashboard/tickets/${item.data.ticketId}`} className="font-medium text-primary hover:underline">
+              {item.data.ticketTitle}
             </Link>
           </>
         );
       case "ticket-assigned":
         return (
           <>
-            <span className="font-medium">{item.user.name}</span> assigned{" "}
-            <Link href="#" className="font-medium text-primary hover:underline">
-              {item.ticket.title}
+            <span className="font-medium">{actorName}</span> assigned{" "}
+            <Link href={`/dashboard/tickets/${item.data.ticketId}`} className="font-medium text-primary hover:underline">
+              {item.data.ticketTitle}
             </Link>{" "}
-            to <span className="font-medium">{item.assignee.name}</span>
+            to <span className="font-medium">
+              {item.data.assignee?.name || item.data.assignee?.email || "a team member"}
+            </span>
           </>
         );
       case "comment-added":
         return (
           <>
-            <span className="font-medium">{item.user.name}</span> commented on{" "}
-            <Link href="#" className="font-medium text-primary hover:underline">
-              {item.ticket.title}
+            <span className="font-medium">{actorName}</span> commented on{" "}
+            <Link href={`/dashboard/tickets/${item.data.ticketId}`} className="font-medium text-primary hover:underline">
+              {item.data.ticketTitle}
             </Link>
+            {item.data.commentPreview && (
+              <>: <span className="text-muted-foreground">{item.data.commentPreview}</span></>
+            )}
           </>
         );
-      case "ticket-resolved":
+      case "status_changed":
         return (
           <>
-            <span className="font-medium">{item.user.name}</span> resolved{" "}
-            <Link href="#" className="font-medium text-primary hover:underline">
-              {item.ticket.title}
-            </Link>
+            <span className="font-medium">{actorName}</span> changed status to{" "}
+            <span className="font-medium">{item.data.newStatus}</span>
           </>
         );
-      case "ticket-priority":
+      case "priority_changed":
         return (
           <>
-            <span className="font-medium">{item.user.name}</span> set priority to{" "}
-            <span className="font-medium text-destructive">{item.priority}</span> for{" "}
-            <Link href="#" className="font-medium text-primary hover:underline">
-              {item.ticket.title}
-            </Link>
+            <span className="font-medium">{actorName}</span> set priority to{" "}
+            <span className="font-medium">{item.data.newPriority}</span>
           </>
         );
       default:
@@ -183,14 +118,41 @@ function DashboardRecentActivity() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-start gap-3">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="grid gap-0.5 text-sm flex-1">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="ml-auto rounded-full h-6 w-6" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div>Error loading activities: {error.message}</div>;
+  }
+
+  if (!activityItems || activityItems.length === 0) {
+    return <div className="text-center text-muted-foreground">No recent activity found.</div>;
+  }
+
   return (
     <div className="space-y-4">
       {activityItems.map(item => (
         <div key={item.id} className="flex items-start gap-3">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={item.user.image} alt={item.user.name} />
+            <AvatarImage src={item.actor?.image || ""} alt={item.actor?.name || ""} />
             <AvatarFallback>
-              {item.user.name.split(" ").map(n => n[0]).join("")}
+              {item.actor?.name 
+                ? item.actor.name.split(" ").map(n => n[0]).join("")
+                : "U"}
             </AvatarFallback>
           </Avatar>
           <div className="grid gap-0.5 text-sm">

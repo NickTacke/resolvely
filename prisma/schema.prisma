@@ -65,7 +65,7 @@ model Ticket {
 
   category    String? // Example: "Bug", "Feature Request", "Question" - You can make this an Enum or separate model later if needed
 
-  assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  assignedTo   User?   @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull) // Assigned agent
   assignedToId String? // Foreign key for User (assigned agent)
 
   createdBy   User?  @relation("CreatedTickets", fields: [createdById], references: [id])// Implicitly linked via authentication context when creating, but you could explicitly track if needed

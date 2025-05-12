@@ -27,8 +27,8 @@
   * Define user roles (e.g., admin, agent, user) if necessary for authorization.
 - - [x] **User Model & Prisma Integration**: Extend your Prisma schema and models to include user data.
 - - [x] **Protected Routes**: Implement protected routes to ensure only authenticated users can access certain pages (like ticket creation, viewing, etc.).
-- - [ ] **Basic User Management (Admin Panel - Optional for MVP)**: If needed for your application, create a basic admin panel to manage users.
-- - [ ] **Authorization Logic**: Implement authorization logic to control what users can do based on roles or permissions (e.g., who can create tickets, who can update status, who can assign tickets).
+- - [x] **Basic User Management (Admin Panel - Optional for MVP)**: If needed for your application, create a basic admin panel to manage users.
+- - [x] **Authorization Logic**: Implement authorization logic to control what users can do based on roles or permissions (e.g., who can create tickets, who can update status, who can assign tickets).
 
 **3. Advanced Ticket Features & Refinement (Milestone 3)**
 
